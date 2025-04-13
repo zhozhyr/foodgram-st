@@ -44,3 +44,9 @@ docker-compose up --build
 
 ### Стэк:
 Python, DRF, PostgreSQL, Docker, NGINX, Gunicorn, GitHub Actions, CI/CD  
+
+### Docker Hub
+```
+https://hub.docker.com/r/zjozjyr/foodgram-backend
+```
+Образ foodgram-backend

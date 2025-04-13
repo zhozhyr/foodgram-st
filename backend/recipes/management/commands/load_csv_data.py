@@ -3,8 +3,6 @@ from pathlib import Path
 from django.core.management.base import BaseCommand
 from users.models import User
 from recipes.models import Recipe, RecipeComponent, Ingredient
-from django.utils.timezone import make_aware
-from datetime import datetime
 from dateutil.parser import parse
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent

@@ -275,7 +275,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             writer = csv.writer(output)
             writer.writerow(['Ингредиент', 'Количество', 'Единица измерения'])
             for i in ingredients:
-                writer.writerow([i['name'], i['amount'], i['measurement_unit']])
+                writer.writerow([i['name'], i['amount'],
+                                 i['measurement_unit']])
             response = HttpResponse(output.getvalue(), content_type="text/csv")
             filename = "shopping_cart.csv"
 
@@ -289,7 +290,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 pdf.cell(
                     200,
                     10,
-                    txt=f"{i['name']} ({i['measurement_unit']}) — {i['amount']}",
+                    txt=f"{i['name']} ({i['measurement_unit']}) — "
+                        f"{i['amount']}",
                     ln=True
                 )
 

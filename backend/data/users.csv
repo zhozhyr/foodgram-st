@@ -1,5 +1,4 @@
 id,password,last_login,is_superuser,username,is_staff,is_active,date_joined,first_name,last_name,email,avatar
 15,pbkdf2_sha256$600000$a1giqOGIYL3vcWVWPDPvZh$lkszOgXKjWMTAZoTuHsEqCAAyjCT38XSu4L0vTErCco=,,f,user1,f,t,2025-04-12 19:58:30+07,user1,user1,user1@user.ru,""
-10,pbkdf2_sha256$600000$NioYG3CP1EjmHF8y5vY0fG$t55A5kdpxHAaksCQf1drKjlH0LW8dWUDecwwvyPsRPw=,2025-04-13 16:36:26.096631+07,t,admin,t,t,2025-04-12 19:57:17.186082+07,admin,admin,admin@admin.ru,""
 16,pbkdf2_sha256$600000$dFCD6UxkcHTSxGUzAgYYh2$pZ/9s64aZVd/MoR6K4ut/DIojRoO/ab6K4chx6weZKM=,,f,user4,f,t,2025-04-13 16:37:10+07,user4,user4,user4@user4.user4,""
 17,pbkdf2_sha256$600000$oUJzgi2uWyAXL6j9QgT9Vq$gJa3UnvZvf0ySQDIyduJGT027JYQXCt6Yqg0EwCbraY=,,f,user3,f,t,2025-04-12 20:00:38+07,user3,user3,user3@user.ru,""

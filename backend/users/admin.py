@@ -13,6 +13,8 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ('username', 'email')
 
 
+
+
 @admin.register(Subscription)
 class FollowAdmin(admin.ModelAdmin):
     list_display = ('follower', 'author')

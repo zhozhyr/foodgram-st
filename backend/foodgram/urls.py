@@ -8,7 +8,9 @@ from api.views import RecipeViewSet
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    path('s/<str:short_code>/', RecipeViewSet.as_view({'get': 'redirect_to_recipe'}), name='redirect-to-recipe'),
+    path('s/<str:short_code>/',
+         RecipeViewSet.as_view({'get': 'redirect_to_recipe'}),
+         name='redirect-to-recipe'),
 
     path('api/', include('api.urls')),
 ]

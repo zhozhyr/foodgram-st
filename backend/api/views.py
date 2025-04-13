@@ -259,64 +259,51 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated]
     )
     def download_shopping_cart(self, request):
-        ingredients_list = self.get_ingredients_list_from_cart(request.user)
+        ingredients = self.get_ingredients_list_from_cart(request.user)
         file_format = request.query_params.get('format', 'txt').lower()
 
-        format_functions = {
-            'txt': self.generate_txt_file,
-            'csv': self.generate_csv_file,
-            'pdf': self.generate_pdf_file
-        }
+        if file_format == 'txt':
+            content = "\n".join(
+                f"{i['name']} ({i['measurement_unit']}) — {i['amount']}"
+                for i in ingredients
+            )
+            response = HttpResponse(content, content_type="text/plain")
+            filename = "shopping_cart.txt"
 
-        generate_function = format_functions.get(file_format)
+        elif file_format == 'csv':
+            output = StringIO()
+            writer = csv.writer(output)
+            writer.writerow(['Ингредиент', 'Количество', 'Единица измерения'])
+            for i in ingredients:
+                writer.writerow([i['name'], i['amount'], i['measurement_unit']])
+            response = HttpResponse(output.getvalue(), content_type="text/csv")
+            filename = "shopping_cart.csv"
 
-        if generate_function:
-            return generate_function(ingredients_list)
+        elif file_format == 'pdf':
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Arial", size=12)
+            pdf.cell(200, 10, txt="Список покупок", ln=True, align='C')
 
-        return Response(
-            {"detail": "Выбран неверный формат файла"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+            for i in ingredients:
+                pdf.cell(
+                    200,
+                    10,
+                    txt=f"{i['name']} ({i['measurement_unit']}) — {i['amount']}",
+                    ln=True
+                )
 
-    def generate_txt_file(self, ingredients):
-        content = "\n".join(
-            f"{i['name']} ({i['measurement_unit']}) — {i['amount']}"
-            for i in ingredients
-        )
-        response = HttpResponse(content, content_type="text/plain")
-        response['Content-Disposition'] = ('attachment; '
-                                           'filename="shopping_cart.txt"')
-        return response
+            response = HttpResponse(pdf.output(dest='S').encode('latin1'),
+                                    content_type='application/pdf')
+            filename = "shopping_cart.pdf"
 
-    def generate_csv_file(self, ingredients):
-        output = StringIO()
-        writer = csv.writer(output)
-        writer.writerow(['Ингредиент', 'Количество', 'Единица измерения'])
-        for i in ingredients:
-            writer.writerow([i['name'], i['amount'], i['measurement_unit']])
-        response = HttpResponse(output.getvalue(), content_type="text/csv")
-        response['Content-Disposition'] = ('attachment; '
-                                           'filename="shopping_cart.csv"')
-        return response
-
-    def generate_pdf_file(self, ingredients):
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        pdf.cell(200, 10, txt="Список покупок", ln=True, align='C')
-
-        for i in ingredients:
-            pdf.cell(
-                200,
-                10,
-                txt=f"{i['name']} ({i['measurement_unit']}) — {i['amount']}",
-                ln=True
+        else:
+            return Response(
+                {"detail": "Выбран неверный формат файла"},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        response = HttpResponse(pdf.output(dest='S').encode('latin1'),
-                                content_type='application/pdf')
-        response['Content-Disposition'] = ('attachment; '
-                                           'filename="shopping_cart.pdf"')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
 
     @action(

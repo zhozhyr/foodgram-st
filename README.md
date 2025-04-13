@@ -30,7 +30,7 @@ docker-compose up --build
 #### Администратор
 
 - email: admin@admin.ru
-- пароль: BigBossAdmin3000
+- пароль: admin
 
 #### Пользователь №1
 - email: user1@user.ru

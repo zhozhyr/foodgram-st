@@ -7,8 +7,10 @@ from django_filters.rest_framework import BooleanFilter
 class RecipeFilter(django_filters.FilterSet):
     """
     Фильтр для рецептов по полям:
-    - is_favorited: возвращает рецепты, добавленные в избранное текущим пользователем
-    - is_in_shopping_cart: возвращает рецепты, добавленные в корзину текущим пользователем
+    - is_favorited: возвращает рецепты, добавленные в избранное
+    текущим пользователем
+    - is_in_shopping_cart: возвращает рецепты, добавленные в корзину
+    текущим пользователем
     - author: фильтрация по автору рецепта
     """
     is_favorited = BooleanFilter(method='filter_is_favorited')
@@ -20,7 +22,8 @@ class RecipeFilter(django_filters.FilterSet):
 
     def filter_is_favorited(self, queryset, name, value):
         """
-        Фильтрует рецепты, добавленные в избранное текущим пользователем.
+        Фильтрует рецепты, добавленные в избранное
+        текущим пользователем.
 
         Args:
             queryset (QuerySet): исходный набор рецептов

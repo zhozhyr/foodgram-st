@@ -14,7 +14,6 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
         Разрешает:
         - безопасные методы (GET, HEAD, OPTIONS) всем
         - небезопасные методы (POST, PUT, DELETE и т.д.) только автору
-
         Args:
             request (HttpRequest): объект запроса
             view (View): текущая view
@@ -24,6 +23,6 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
             bool: True — доступ разрешён, False — запрещён
         """
         return (
-                request.method in permissions.SAFE_METHODS
-                or obj.author == request.user
+            request.method in permissions.SAFE_METHODS
+            or obj.author == request.user
         )

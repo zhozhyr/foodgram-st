@@ -9,7 +9,8 @@ recipe_router = routers.DefaultRouter()
 
 user_router.register('users', views.UserViewSet, basename='users')
 recipe_router.register('recipes', views.RecipeViewSet, basename='recipes')
-recipe_router.register('ingredients', views.IngredientViewSet, basename='ingredients')
+recipe_router.register('ingredients', views.IngredientViewSet,
+                       basename='ingredients')
 
 urlpatterns = [
     # API маршруты

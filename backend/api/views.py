@@ -122,7 +122,8 @@ class UserViewSet(DjoserUserViewSet):
         authors = [sub.author for sub in subscriptions]
 
         page = self.paginate_queryset(authors)
-        serializer = FollowSerializer(page, many=True, context={'request': request})
+        serializer = FollowSerializer(page, many=True,
+                                      context={'request': request})
         return self.get_paginated_response(serializer.data)
 
     @action(detail=True,
@@ -283,7 +284,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             for i in ingredients
         )
         response = HttpResponse(content, content_type="text/plain")
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
+        response['Content-Disposition'] = ('attachment; '
+                                           'filename="shopping_cart.txt"')
         return response
 
     def generate_csv_file(self, ingredients):
@@ -293,7 +295,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         for i in ingredients:
             writer.writerow([i['name'], i['amount'], i['measurement_unit']])
         response = HttpResponse(output.getvalue(), content_type="text/csv")
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.csv"'
+        response['Content-Disposition'] = ('attachment; '
+                                           'filename="shopping_cart.csv"')
         return response
 
     def generate_pdf_file(self, ingredients):
@@ -310,8 +313,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 ln=True
             )
 
-        response = HttpResponse(pdf.output(dest='S').encode('latin1'), content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.pdf"'
+        response = HttpResponse(pdf.output(dest='S').encode('latin1'),
+                                content_type='application/pdf')
+        response['Content-Disposition'] = ('attachment; '
+                                           'filename="shopping_cart.pdf"')
         return response
 
     @action(

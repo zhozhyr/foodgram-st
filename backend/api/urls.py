@@ -15,5 +15,6 @@ urlpatterns = [
     # API маршруты
     path('', include(user_router.urls)),
     path('', include(recipe_router.urls)),
+    path('', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
 ]

@@ -113,15 +113,16 @@ class UserViewSet(DjoserUserViewSet):
             url_path='subscriptions',
             permission_classes=[permissions.IsAuthenticated]
             )
+    @action(detail=False,
+            methods=['get'],
+            url_path='subscriptions',
+            permission_classes=[permissions.IsAuthenticated])
     def get_subscriptions(self, request):
-        user = request.user
+        subscriptions = Subscription.objects.filter(follower=request.user)
+        authors = [sub.author for sub in subscriptions]
 
-        subscriptions = User.objects.filter(author__user=user)
-
-        page = self.paginate_queryset(subscriptions)
-
-        serializer = FollowSerializer(
-            page, many=True, context={'request': request})
+        page = self.paginate_queryset(authors)
+        serializer = FollowSerializer(page, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
     @action(detail=True,
@@ -142,7 +143,7 @@ class UserViewSet(DjoserUserViewSet):
             follow = serializer.save()
             return Response(
                 FollowSerializer(
-                    follow.following,
+                    follow.author,
                     context={'request': request}).data,
                 status=status.HTTP_201_CREATED
             )
@@ -150,7 +151,7 @@ class UserViewSet(DjoserUserViewSet):
         author_user = get_object_or_404(User, pk=id)
 
         follow_instance = Subscription.objects.filter(
-            user=user, author=author_user).first()
+            follower=user, author=author_user).first()
 
         if not follow_instance:
             return Response(

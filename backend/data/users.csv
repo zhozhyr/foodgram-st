@@ -1,5 +1,5 @@
 id,password,last_login,is_superuser,username,is_staff,is_active,date_joined,first_name,last_name,email,avatar
-2,pbkdf2_sha256$600000$a1giqOGIYL3vcWVWPDPvZh$lkszOgXKjWMTAZoTuHsEqCAAyjCT38XSu4L0vTErCco=,,f,user1,f,t,2025-04-12 19:58:30+07,user1,user1,user1@user.ru,""
-6,pbkdf2_sha256$600000$jEoAnCdn0kKhYiKZ8600NY$G2xiCrefN5iFr1LpA2VS7Kn+US0uGU7YdqkKNDH+nkg=,,f,user2,f,t,2025-04-12 20:00:13+07,user2,user2,user2@user.ru,""
-7,pbkdf2_sha256$600000$oUJzgi2uWyAXL6j9QgT9Vq$gJa3UnvZvf0ySQDIyduJGT027JYQXCt6Yqg0EwCbraY=,,f,user3,f,t,2025-04-12 20:00:38+07,user3,user3,user3@user3.user3,""
-1,pbkdf2_sha256$600000$NioYG3CP1EjmHF8y5vY0fG$t55A5kdpxHAaksCQf1drKjlH0LW8dWUDecwwvyPsRPw=,2025-04-13 00:35:27.198086+07,t,admin,t,t,2025-04-12 19:57:17.186082+07,admin,admin,admin@admin.ru,""
+15,pbkdf2_sha256$600000$a1giqOGIYL3vcWVWPDPvZh$lkszOgXKjWMTAZoTuHsEqCAAyjCT38XSu4L0vTErCco=,,f,user1,f,t,2025-04-12 19:58:30+07,user1,user1,user1@user.ru,""
+16,pbkdf2_sha256$600000$jEoAnCdn0kKhYiKZ8600NY$G2xiCrefN5iFr1LpA2VS7Kn+US0uGU7YdqkKNDH+nkg=,,f,user2,f,t,2025-04-12 20:00:13+07,user2,user2,user2@user.ru,""
+17,pbkdf2_sha256$600000$oUJzgi2uWyAXL6j9QgT9Vq$gJa3UnvZvf0ySQDIyduJGT027JYQXCt6Yqg0EwCbraY=,,f,user3,f,t,2025-04-12 20:00:38+07,user3,user3,user3@user3.user3,""
+10,pbkdf2_sha256$600000$NioYG3CP1EjmHF8y5vY0fG$t55A5kdpxHAaksCQf1drKjlH0LW8dWUDecwwvyPsRPw=,2025-04-13 00:35:27.198086+07,t,admin,t,t,2025-04-12 19:57:17.186082+07,admin,admin,admin@admin.ru,""

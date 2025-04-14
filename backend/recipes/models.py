@@ -1,11 +1,12 @@
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils import timezone
 
 from foodgram.constants import (MAX_LENGTH_INGREDIENT_MEASUREMENT_UNIT,
                                 MAX_LENGTH_INGREDIENT_NAME, MIN_AMOUNT_VALUE,
-                                MAX_LENGTH_RECIPE_NAME, MIN_COOKING_TIME_VALUE)
+                                MAX_LENGTH_RECIPE_NAME, MIN_COOKING_TIME_VALUE,
+                                MAX_INGREDIENT_AMOUNT, MAX_COOKING_TIME_VALUE)
 
 User = get_user_model()
 
@@ -52,7 +53,8 @@ class RecipeComponent(models.Model):
     amount = models.PositiveIntegerField(
         verbose_name='Количество',
         validators=[
-            MinValueValidator(MIN_AMOUNT_VALUE)
+            MinValueValidator(MIN_AMOUNT_VALUE),
+            MaxValueValidator(MAX_INGREDIENT_AMOUNT),
         ]
     )
 
@@ -100,7 +102,10 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления (минуты)',
-        validators=[MinValueValidator(MIN_COOKING_TIME_VALUE)],
+        validators=[
+            MinValueValidator(MIN_COOKING_TIME_VALUE),
+            MaxValueValidator(MAX_COOKING_TIME_VALUE)
+        ],
     )
     pub_date = models.DateTimeField(
         verbose_name='Дата публикации',

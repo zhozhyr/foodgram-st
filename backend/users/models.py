@@ -40,13 +40,13 @@ class Subscription(models.Model):
         User,
         verbose_name='Подписчик',
         on_delete=models.CASCADE,
-        related_name='follower',
+        related_name='subscriptions',
     )
     author = models.ForeignKey(
         User,
         verbose_name='Автор',
         on_delete=models.CASCADE,
-        related_name='author',
+        related_name='subscribers',
     )
 
     class Meta:
@@ -61,4 +61,4 @@ class Subscription(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.follower} подписчик автора - {self.follower}'
+        return f'{self.follower} подписан на {self.author}'

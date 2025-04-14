@@ -12,6 +12,14 @@ class UserAdmin(BaseUserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name')
     search_fields = ('username', 'email')
 
+    @admin.display(description='Рецептов')
+    def recipes_count(self, obj):
+        return obj.recipes.count()
+
+    @admin.display(description='Подписчиков')
+    def subscribers_count(self, obj):
+        return obj.subscribers.count()
+
 
 @admin.register(Subscription)
 class FollowAdmin(admin.ModelAdmin):
@@ -19,6 +27,3 @@ class FollowAdmin(admin.ModelAdmin):
     list_filter = ('follower', 'author')
     search_fields = ('follower__username', 'author__username')
     raw_id_fields = ('follower', 'author')
-
-    def __str__(self):
-        return f'{self.follower} подписчик автора - {self.author}'

@@ -1,17 +1,13 @@
 import base64
-import csv
 import os
 import uuid
-from io import StringIO
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.db.models import Sum
-from django.http import HttpResponse
 from django.shortcuts import redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
-from fpdf import FPDF
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -24,12 +20,17 @@ from api.paginations import Pagination
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (FavoriteSerializer, FollowSerializer,
                              IngredientSerializer,
-                             RecipeSerializer,
-                             ShoppingCartSerializer,
-                             SubscriptionSerializer, UserSerializer)
+                             RecipeReadSerializer, RecipeWriteSerializer,
+                             ShoppingCartSerializer, SubscriptionSerializer,
+                             UserSerializer)
+from api.services import manage_user_recipe
+from api.utils.shopping_cart_export import (
+    export_shopping_cart_txt,
+    export_shopping_cart_csv,
+    export_shopping_cart_pdf,
+)
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeComponent,
                             ShoppingCart)
-from users.models import Subscription
 
 User = get_user_model()
 
@@ -42,6 +43,7 @@ class UserViewSet(DjoserUserViewSet):
     - список подписок
     - подписка / отписка от автора
     """
+
     queryset = User.objects.all().order_by('username')
     serializer_class = UserSerializer
     pagination_class = Pagination
@@ -118,8 +120,7 @@ class UserViewSet(DjoserUserViewSet):
             url_path='subscriptions',
             permission_classes=[permissions.IsAuthenticated])
     def get_subscriptions(self, request):
-        subscriptions = Subscription.objects.filter(follower=request.user)
-        authors = [sub.author for sub in subscriptions]
+        authors = User.objects.filter(subscriptions__follower=request.user)
 
         page = self.paginate_queryset(authors)
         serializer = FollowSerializer(page, many=True,
@@ -135,24 +136,21 @@ class UserViewSet(DjoserUserViewSet):
         user = request.user
 
         if request.method == 'POST':
+            author = get_object_or_404(User, pk=id)  # <-- ДО сериализатора
             serializer = SubscriptionSerializer(
-                data={'author_id': id},
+                data={'author': author.id},
                 context={'request': request}
             )
-
             serializer.is_valid(raise_exception=True)
             follow = serializer.save()
             return Response(
-                FollowSerializer(
-                    follow.author,
-                    context={'request': request}).data,
+                FollowSerializer(follow.author,
+                                 context={'request': request}).data,
                 status=status.HTTP_201_CREATED
             )
 
         author_user = get_object_or_404(User, pk=id)
-
-        follow_instance = Subscription.objects.filter(
-            follower=user, author=author_user).first()
+        follow_instance = user.subscriptions.filter(author=author_user).first()
 
         if not follow_instance:
             return Response(
@@ -162,30 +160,6 @@ class UserViewSet(DjoserUserViewSet):
 
         follow_instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-def manage_user_recipe(request, pk, model, serializer_class):
-    recipe = get_object_or_404(Recipe, pk=pk)
-
-    if request.method == 'POST':
-        serializer = serializer_class(data={
-            'user': request.user.id,
-            'recipe': recipe.id
-        })
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    item = model.objects.filter(
-        user=request.user, recipe=recipe
-    ).first()
-    if not item:
-        return Response(
-            {"detail": f"Рецепт не найден в {model._meta.verbose_name}."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    item.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -200,7 +174,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     queryset = Recipe.objects.all().select_related(
         'author').prefetch_related('ingredients')
-    serializer_class = RecipeSerializer
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly,
         IsAuthorOrReadOnly
@@ -208,6 +181,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = Pagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return RecipeReadSerializer
+        return RecipeWriteSerializer
 
     @action(
         detail=True,
@@ -235,7 +213,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return redirect(redirect_url)
 
     def get_ingredients_list_from_cart(self, user):
-        ingredients = (
+        return (
             RecipeComponent.objects
             .filter(recipe__shopping_carts__user=user)
             .values('ingredient__name', 'ingredient__measurement_unit')
@@ -243,13 +221,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
             .order_by('ingredient__name')
         )
 
+    def serialize_ingredients(self, ingredients):
         return [
             {
-                'name': ingredient['ingredient__name'],
-                'amount': ingredient['amount'],
-                'measurement_unit': ingredient['ingredient__measurement_unit']
+                'name': item['ingredient__name'],
+                'amount': item['amount'],
+                'measurement_unit': item['ingredient__measurement_unit']
             }
-            for ingredient in ingredients
+            for item in ingredients
         ]
 
     @action(
@@ -259,54 +238,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated]
     )
     def download_shopping_cart(self, request):
-        ingredients = self.get_ingredients_list_from_cart(request.user)
+        ingredients = self.serialize_ingredients(
+            self.get_ingredients_list_from_cart(request.user)
+        )
         file_format = request.query_params.get('format', 'txt').lower()
 
-        if file_format == 'txt':
-            content = "\n".join(
-                f"{i['name']} ({i['measurement_unit']}) — {i['amount']}"
-                for i in ingredients
-            )
-            response = HttpResponse(content, content_type="text/plain")
-            filename = "shopping_cart.txt"
+        exporters = {
+            'txt': export_shopping_cart_txt,
+            'csv': export_shopping_cart_csv,
+            'pdf': export_shopping_cart_pdf,
+        }
 
-        elif file_format == 'csv':
-            output = StringIO()
-            writer = csv.writer(output)
-            writer.writerow(['Ингредиент', 'Количество', 'Единица измерения'])
-            for i in ingredients:
-                writer.writerow([i['name'], i['amount'],
-                                 i['measurement_unit']])
-            response = HttpResponse(output.getvalue(), content_type="text/csv")
-            filename = "shopping_cart.csv"
-
-        elif file_format == 'pdf':
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=12)
-            pdf.cell(200, 10, txt="Список покупок", ln=True, align='C')
-
-            for i in ingredients:
-                pdf.cell(
-                    200,
-                    10,
-                    txt=f"{i['name']} ({i['measurement_unit']}) — "
-                        f"{i['amount']}",
-                    ln=True
-                )
-
-            response = HttpResponse(pdf.output(dest='S').encode('latin1'),
-                                    content_type='application/pdf')
-            filename = "shopping_cart.pdf"
-
-        else:
+        exporter = exporters.get(file_format)
+        if not exporter:
             return Response(
                 {"detail": "Выбран неверный формат файла"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
+        return exporter(ingredients)
 
     @action(
         detail=True,

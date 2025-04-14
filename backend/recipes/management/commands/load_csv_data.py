@@ -50,35 +50,21 @@ class Command(BaseCommand):
         with open(data_dir / 'recipes.csv', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                Recipe.objects.create(
-                    id=row['id'],
-                    name=row['name'],
-                    image=row['image'],
-                    text=row['text'],
-                    cooking_time=row['cooking_time'],
-                    pub_date=parse(row['pub_date']),
-                    author_id=row['author_id']
-                )
+                row['cooking_time'] = int(row['cooking_time'])
+                row['pub_date'] = parse(row['pub_date'])
+                Recipe.objects.create(**row)
 
         # --- INGREDIENTS ---
         with open(data_dir / 'ingredients.csv', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                Ingredient.objects.get_or_create(
-                    id=row['id'],
-                    name=row['name'],
-                    measurement_unit=row['measurement_unit']
-                )
+                Ingredient.objects.get_or_create(**row)
 
         # --- RECIPE COMPONENTS ---
         with open(data_dir / 'recipes_ingredient.csv', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                RecipeComponent.objects.create(
-                    id=row['id'],
-                    amount=row['amount'],
-                    ingredient_id=row['ingredient_id'],
-                    recipe_id=row['recipe_id']
-                )
+                row['amount'] = int(row['amount'])
+                RecipeComponent.objects.create(**row)
 
         self.stdout.write(self.style.SUCCESS('Данные загружены из CSV'))

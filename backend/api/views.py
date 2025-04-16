@@ -134,11 +134,10 @@ class UserViewSet(DjoserUserViewSet):
             )
     def manage_subscription(self, request, id=None):
         user = request.user
-
+        author = get_object_or_404(User, pk=id)
         if request.method == 'POST':
-            author = get_object_or_404(User, pk=id)  # <-- ДО сериализатора
             serializer = SubscriptionSerializer(
-                data={'author': author.id},
+                data={'author': author.id, 'follower': user.id},
                 context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
@@ -149,16 +148,13 @@ class UserViewSet(DjoserUserViewSet):
                 status=status.HTTP_201_CREATED
             )
 
-        author_user = get_object_or_404(User, pk=id)
-        follow_instance = user.subscriptions.filter(author=author_user).first()
-
-        if not follow_instance:
+        deleted, _ = user.subscriptions.filter(author=author).delete()
+        if not deleted:
             return Response(
                 {"detail": "Вы не подписаны на этого пользователя."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        follow_instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -249,8 +245,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'pdf': export_shopping_cart_pdf,
         }
 
-        exporter = exporters.get(file_format)
-        if not exporter:
+        if not (exporter := exporters.get(file_format)):
             return Response(
                 {"detail": "Выбран неверный формат файла"},
                 status=status.HTTP_400_BAD_REQUEST

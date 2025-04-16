@@ -80,27 +80,26 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         many=True, write_only=True
     )
     read_ingredients = serializers.SerializerMethodField(read_only=True)
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
     image = Base64ImageField()
+
+    cooking_time = serializers.IntegerField(
+        min_value=MIN_COOKING_TIME_VALUE,
+        max_value=MAX_COOKING_TIME_VALUE,
+        error_messages={
+            'min_value': f"Время готовки не может быть меньше "
+                         f"{MIN_COOKING_TIME_VALUE} мин.",
+            'max_value': f"Время готовки не может превышать "
+                         f"{MAX_COOKING_TIME_VALUE} мин.",
+            'invalid': "Введите целое число для времени готовки."
+        }
+    )
 
     class Meta:
         model = Recipe
         fields = (
             'id', 'author', 'name', 'text', 'image', 'cooking_time',
             'ingredients', 'read_ingredients',
-            'is_favorited', 'is_in_shopping_cart'
         )
-
-    def validate_cooking_time(self, value):
-        if not MIN_COOKING_TIME_VALUE <= value <= MAX_COOKING_TIME_VALUE:
-            raise ValidationError({
-                "cooking_time": (
-                    f"Время готовки должно быть от {MIN_COOKING_TIME_VALUE} "
-                    f"до {MAX_COOKING_TIME_VALUE} минут."
-                )
-            })
-        return value
 
     def validate(self, data):
         ingredients_data = data.get('ingredients')
@@ -117,13 +116,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return data
 
     def create_recipe_ingredients(self, recipe, ingredients_data):
-        RecipeComponent.objects.bulk_create([
+        RecipeComponent.objects.bulk_create(
             RecipeComponent(
                 recipe=recipe,
                 ingredient=item['id'],
                 amount=item['amount']
-            ) for item in ingredients_data
-        ])
+            )
+            for item in ingredients_data
+        )
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
@@ -174,16 +174,15 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             for component in obj.recipe_ingredients.all()
         ]
 
-    def _check_user_relation(self, obj, related_name):
+    def _check_user_relation(self, manager):
         user = self.context.get('request').user
-        return (user.is_authenticated
-                and getattr(obj, related_name).filter(user=user).exists())
+        return user.is_authenticated and manager.filter(user=user).exists()
 
     def get_is_favorited(self, obj):
-        return self._check_user_relation(obj, 'favorites')
+        return self._check_user_relation(obj.favorites)
 
     def get_is_in_shopping_cart(self, obj):
-        return self._check_user_relation(obj, 'shopping_carts')
+        return self._check_user_relation(obj.shopping_carts)
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
@@ -237,32 +236,30 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ('author',)
+        fields = ('author', 'follower')
         extra_kwargs = {
-            'author': {'write_only': True}
+            'author': {'write_only': True},
+            'follower': {'write_only': True}
         }
 
     def validate(self, data):
-        user = self.context['request'].user
         author = data['author']
+        follower = data['follower']
 
-        if user == author:
+        if author == follower:
             raise serializers.ValidationError(
                 "Невозможно подписаться на самого себя."
             )
 
-        if Subscription.objects.filter(follower=user, author=author).exists():
+        if Subscription.objects.filter(
+                follower=follower,
+                author=author
+        ).exists():
             raise serializers.ValidationError(
                 "Вы уже подписаны на этого пользователя."
             )
 
         return data
-
-    def create(self, validated_data):
-        return Subscription.objects.create(
-            follower=self.context['request'].user,
-            **validated_data
-        )
 
     def to_representation(self, instance):
         return FollowSerializer(instance.author, context=self.context).data
